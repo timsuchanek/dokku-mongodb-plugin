@@ -9,7 +9,7 @@ else
   DATABASE=$3
 fi
 
-IMAGE="jeffutter/mongodb"
+IMAGE="timsuchanek/mongodb"
 
 OLDHOME=$HOME
 HOME="$DOKKU_ROOT/.mongodb"
@@ -45,7 +45,7 @@ set_dokku_env() {
 admin_pass=$(cat "$DOKKU_ROOT/.mongodb/admin_pw")
 mongodb_database="${DATABASE/./_}-production"
 
-db_image="jeffutter/mongodb"
+db_image="timsuchanek/mongodb"
 id=$(docker ps | grep "$db_image":latest |  awk '{print $1}')
 if [[ -n "$id" ]]; then
   mongodb_public_ip=$(docker port ${id} 27017 | awk '{split($0,a,":"); print a[1]}')

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Build MongoDB image
-db_image="jeffutter/mongodb"
-docker pull "$db_image"
+db_image="timsuchanek/mongodb"
+docker build -t "$db_image" .
 
 if [[ -f /etc/init/mongodb.conf ]]
 then
@@ -11,28 +11,27 @@ else
   previous_mongo_install=false
 fi
   
-apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
-echo deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen > /etc/apt/sources.list.d/10gen.list
-apt-get update
-apt-get -y install mongodb-org
-
 if [ $previous_mongo_install = false ]; then
   echo 'ENABLE_MONGODB="no"' > /etc/default/mongodb
 fi
 
+DOKKU_ROOT="/home/dokku"
+
 if [[ ! -d "$DOKKU_ROOT/.mongodb" ]]; then
   mkdir -p "$DOKKU_ROOT/.mongodb"
   mkdir -p "$DOKKU_ROOT/.mongodb/data"
+  mkdir -p "$DOKKU_ROOT/.mongodb/data/db"
 
   admin_pass=$(openssl rand -base64 32|base64)
   echo $admin_pass > "$DOKKU_ROOT/.mongodb/admin_pw"
 
   chown -R dokku: "$DOKKU_ROOT/.mongodb"
 
-  docker run -p 27017 -d -v "$DOKKU_ROOT/.mongodb/data":/tmp/mongo "$db_image" /usr/bin/mongod --dbpath=/tmp/mongo
+  docker run -p 5000:27017 -d -v "$DOKKU_ROOT/.mongodb/data":/data "$db_image" /usr/bin/mongod 
   id=$(docker ps | grep "$db_image":latest |  awk '{print $1}')
   mongodb_ip=$(docker port ${id} 27017 | awk '{split($0,a,":"); print a[1]}')
   mongodb_port=$(docker port ${id} 27017 | awk '{split($0,a,":"); print a[2]}')
+  echo "mongo data: $id, $mongodb_ip, $mongodb_port"
   if [[ $mongodb_ip = "0.0.0.0" ]]; then
     mongodb_ip=localhost
   fi
